@@ -1,0 +1,83 @@
+---
+title: "Model Report"
+subtitle: "186.868 Visual Data Science 2023W"
+author: "Terezia Olsiakova"
+date: "January 10, 2024"
+output: 
+  pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, tidy = TRUE, tidy.opts=list(arrow=TRUE, indent=2), warning = FALSE, message = FALSE)
+```
+
+
+```{r}
+data <- read.csv("data.csv")
+```
+
+In the modeling stage, I explored the relationship between the ranking scores of universities in a country and the number of mobile students in that country. The data was collected from the years 2012–2019 and aggregated so that each record corresponded to a country's mean university scores and the amount of mobile students in a given year. Therefore, the dataset contained 186 rows and 16 features, which included the aforementioned year, location (or country), number of mobile students, and the rest were the mean of the university rankings corresponding to that record. I was interested in exploring the relationship between the explanatory variables and the target variable, which was the number of mobile students. Moreover, I was interested in finding out whether any of the ranking scores were particularly significant in influencing the target value. For that I chose to fit a simple linear regression model. 
+
+Since the location variable is the only categorical variable
+
+```{r}
+set.seed(1233)
+n <- nrow(data)
+train <- sample(1:n,round(n*0.8))
+test <- (1:n)[-train]
+```
+
+```{r}
+model <- glm(value~., data=data, subset=train)
+```
+
+```{r}
+plot_prediction <- function(actual, predicted, title) {
+  plot(x=actual, y=predicted,
+     xlab='Actual Values',
+     ylab='Predicted Values',
+     main=title)
+  abline(a=0, b=1)
+}
+
+rmse <- function(actual, predicted) {
+  return(sqrt(mean((actual - predicted)^2)))
+}
+```
+
+Since the location variable is the only categorical variable, it needed to be one-hot encoded  before fitting the model. After fitting the model, the location variable (all of its parts) was very significant in explaining the target value. Moreover, variables for the university overall score and international outlook rank were significant for the model. The model was fitted to 80% of the data. The figures show the fit between the training and test subsets. 
+
+When inspecting the results, we conclude that the residuals are not
+normally distributed, since the tails deviate too much for it to be a
+normal distribution. The residuals vs. fitted plot shows that most of 
+the values are fitted very accurately, with a few points deviating more.
+
+```{r, out.width="75%", fig.align='center'}
+res <- resid(model)
+
+#create Q-Q plot for residuals
+qqnorm(res)
+
+#add a straight diagonal line to the plot
+qqline(res) 
+
+#produce residual vs. fitted plot
+plot(fitted(model), res,  
+     xlab='Fitted Values',
+     ylab='Residuals',
+     main='Residuals vs. Fitted')
+
+#add a horizontal line at 0 
+abline(0,0)
+```
+
+To conclude, the simple linear regression models fit the data very well, as shown in the plots. However, the sample size is rather small in this case, especially compared to the number of variables that exploded after the one-hot encoded location was added. Therefore, the results might be too good because the model overfits the data easily. 
+
+```{r, out.width="50%"}
+plot_prediction(predict(model, newdata=data[train,]), data[train,]$value, "Train Subset")
+plot_prediction(predict(model, newdata=data[test,]), data[test,]$value, "Test Subset")
+```
+
+
+
+
